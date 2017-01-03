@@ -7,7 +7,7 @@ from pysynphot import spectrum
 import os
 #################################################################
 fname = '../input_files/cosmos-1.deblend.herschel.v1.0.cat'
-conversion_file = '../input_files/ID_conversion.txt'
+conversion_file = '../input_files/ID_conversion_v2.txt'
 bins_file = '../input_files/Bins_v4.7.dat'
 z_file = '../input_files/cosmos-1.bc03.v4.7.fout'
 filt_dir = '../input_files/transmission_curves/'

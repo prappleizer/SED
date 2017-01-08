@@ -13,6 +13,7 @@ z_file = '../input_files/cosmos-1.bc03.v4.7.fout'
 filt_dir = '../input_files/transmission_curves/'
 filters = [filt_dir+'PacsFilter_blue.txt',filt_dir+'PacsFilter_green.txt',filt_dir+'sp250.dat',filt_dir+'sp350.dat']
 #################################################################
+################### Auxilliary Functions ########################
 def bootstrap_resample(X, n=None):
     """ Bootstrap resample an array_like
     Parameters
@@ -33,6 +34,15 @@ def bootstrap_resample(X, n=None):
     return X_resample
 
 def stack_error(fl_bins):
+	""" Return the bootstap resampled error on a stack of data points (median)
+	Parameters
+	-----------
+	fl_bins: array containing subarrays of fluxes (len number of bins)
+	
+	Results
+	-----------
+	returns comp_errors (len number of bins)
+	"""
 	comp_errors = []
 	for i in fl_bins:
 	    arr = []
@@ -54,8 +64,17 @@ class Herschel(object):
 	'''
 	Constructs a Herschel object containing the relevant info on an SED from all the various sources. 
 	Constructs for a single iteration number. 
-	IN: iteration number (int), path to herschel catalog (str), path to v4.7-->v5.1 file (str), path to bins file, path to redshift file
-	OUT: composite dict containing wavelengths, fluxes, errors, and v4.7/v5.1 IDs for a given iteration
+	Parameters
+	----------
+	iteration_num (int): the iteration number of the categorized SED being constructed (from Kriek+ 2011)
+	catalog_path (str): filepath to the hershcel deblended photometry catalog [fname]
+	conversion_file (str): filepath to the conversion file containing the v4.7-->v5.1 corresponding ID numbers for sources in the catalogs
+	bins_file (str): filepath to the "bins" file containing the iteration for every galaxy (in the v4.7 catalog)
+	z_file (str): filepath to the "fout" file containing the redshifts for all v4.7 sources
+	
+	Results
+	---------
+	returns Herschel Object 
 	'''
 	def __init__(self, iteration_num, catalog_path,conversion_file,bins_file,z_file):
 		self.composite = {} #the final container
@@ -167,7 +186,7 @@ class Herschel(object):
 		'''
 		Load optical SED stacks made by Dyas Utomo
 		IN: iteration number
-		OUT: wl (A), flux (maggies)
+		OUT: wl (A), flux (maggies), flux error (maggies)
 		'''
 		self.err_out=err_out
 		#it-to-type because dyas names files by sed number not iteration number 
@@ -182,7 +201,7 @@ class Herschel(object):
 		data = np.transpose(data)
 		wl = data[0] #micron
 		wl = wl*10000 #Angstrom
-		flux = data[1] #Jansky
+		flux = data[1] #Jansky (even though the files say uJy in them)
 		flux_maggies = flux / 3631. #maggies
 		error = data[2]
 		error_maggies = error / 3631.

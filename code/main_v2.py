@@ -116,9 +116,11 @@ class Herschel(object):
 		zout_ind = []
 		scales = []
 		iterations = []
+		###############################################################################
 		#loop through all v5.1 IDs and find them in the herschel catalog, noting their index for slicing in a moment
 		#at the same time, loop through v4.7 IDs and find them in the redshift-catalog and note their index for slicing in a moment
 		# scaling and iteration information comes from bins- so we check where old_ids (the ids in bins) is the current scanning v4ID.
+		###############################################################################
 		for i in range(len(v5ID)):
 			cat_indx = np.where(alldata['ID'] == v5ID[i])[0]
 			herschel_ind.append(cat_indx)
@@ -131,7 +133,7 @@ class Herschel(object):
 			except:
 				print 'old ID list (from Bins_v4.7) does not contain current ID in v4ID: %s' %(v4ID[i])
 				continue
-
+		###############################################################################		
 		scales = np.array(scales)
 		iterations = np.array(iterations)
 		self.sources = [alldata[f] for f in herschel_ind] #restrict to those v5IDs we are using in this project
@@ -172,7 +174,6 @@ class Herschel(object):
 		errors['E160'] = [np.array([f[0]['E160']*0.27541 for f in self.sources])[i] for i in flux_indices]*scales / zout_arr**2
 		errors['E250'] = [np.array([f[0]['E250']*0.27541 for f in self.sources])[i] for i in flux_indices]*scales / zout_arr**2
 		errors['E350'] = [np.array([f[0]['E350']*0.27541 for f in self.sources])[i] for i in flux_indices]*scales / zout_arr**2
-		
 		
 		self.fluxes = fluxes
 		self.errors = errors
@@ -224,10 +225,9 @@ class Herschel(object):
 		plt.yscale('log')
 		#plt.legend(loc=2)
 		#plt.show()
-		
-
-
-		
+#################################################################		
+#################################################################
+#################################################################
 
 def create_stacks(iteration_num,num_stacks):
 	'''
@@ -306,6 +306,9 @@ def plot_it(iteration_num, num_stacks):
 	plt.legend(loc=2)
 	plt.show()
 
+#################################################################
+#################################################################
+#################################################################
 
 class SED(object):
 	""" Create an SED object containing the full arrays of wavelengths, fluxes, and errors for the stacks.
@@ -453,11 +456,10 @@ def main(iteration_num, num_stacks):
 		outname = outdir + '/filter_' + str(outnum) + '.par'
 		np.savetxt(outname,filt_out)
 
-
-
-#for i in range(1,33):
-#	print 'Working on SED # ', i
-#	main(i,3)
+def run_main():
+	for i in range(1,33):
+		print 'Working on SED # ', i
+		main(i,3)
 
 
 

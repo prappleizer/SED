@@ -7,12 +7,15 @@ from pysynphot import spectrum
 import os
 import sys
 #################################################################
+####################### Filepaths ###############################
 fname = '../input_files/cosmos-1.deblend.herschel.v1.0.cat'
 conversion_file = '../input_files/ID_conversion_v2.txt'
 bins_file = '../input_files/Bins_v4.7.dat'
 z_file = '../input_files/cosmos-1.bc03.v4.7.fout'
 filt_dir = '../input_files/IR_transmission_curves/'
 filters = [filt_dir+'PacsFilter_blue.txt',filt_dir+'PacsFilter_green.txt',filt_dir+'sp250.dat',filt_dir+'sp350.dat']
+
+output_version_number = '2'
 #################################################################
 ################### Auxilliary Functions ########################
 def bootstrap_resample(X, n=None):
@@ -441,12 +444,12 @@ class SED(object):
 
 
 
-def main(iteration_num, num_stacks):
+def main(iteration_num, num_stacks,output_version_number=output_version_number):
 	sed = SED(iteration_num,num_stacks)
-	outname='../SEDs/v2/seds/iteration' + str(iteration_num) + '_sed.txt'
+	outname='../SEDs/v'+output_version_number+'/seds/iteration' + str(iteration_num) + '_sed.txt'
 	sed.file_out(outname)
 	filt_stacks = sed.create_filters()
-	outdir = '../SEDs/v2/composite_filters/iteration_' + str(iteration_num)
+	outdir = '../SEDs/v' +output_version_number+'/composite_filters/iteration_' + str(iteration_num)
 	last_fname = os.listdir(outdir)[-1]
 	last_num = int(last_fname[7:11]) #extract the number of the last file in the directory 
 	wl_arr = np.arange(10000,10000000,1000)
@@ -457,12 +460,12 @@ def main(iteration_num, num_stacks):
 		outname = outdir + '/filter_' + str(outnum) + '.par'
 		np.savetxt(outname,filt_out)
 
-def run_main():
+def run_main(num_stacks):
 	count = 0
 	for i in range(1,33):
 		count += 1
 		print 'Working on SED: ', count
-		main(i,3)
+		main(i,num_stacks)
 
 
 

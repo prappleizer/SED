@@ -354,13 +354,13 @@ class SED(object):
 
 		"""
 		# Load the filters 
-		pacs_blue = np.loadtxt(filters[0],skiprows=2,dtype=[('wl',float),('transmission',float)])
+		pacs_blue = np.loadtxt(filters[0],skiprows=2,dtype=[('wl',float),('transmission',float)]) #load filter files from internal dir
 		pacs_blue['wl']*=1000.
-		pacs_green = np.loadtxt('/Users/ipasha/Documents/research/pacs/PacsFilters/PacsFilter_green.txt',skiprows=2,dtype=[('wl',float),('transmission',float)])
+		pacs_green = np.loadtxt(filters[1],skiprows=2,dtype=[('wl',float),('transmission',float)])
 		pacs_green['wl']*=1000.
-		spire250 = np.loadtxt('/Users/ipasha/Documents/research/pacs/PacsFilters/sp250.dat',dtype=[('wl',float),('transmission',float)])
-		spire350 = np.loadtxt('/Users/ipasha/Documents/research/pacs/PacsFilters/sp350.dat',dtype=[('wl',float),('transmission',float)])
-		mips_filt = np.loadtxt('/Users/ipasha/Documents/research/pacs/PacsFilters/mips_24um.dat',dtype=[('wl',float),('transmission',float)])
+		spire250 = np.loadtxt(filters[2],dtype=[('wl',float),('transmission',float)])
+		spire350 = np.loadtxt(filters[3],dtype=[('wl',float),('transmission',float)])
+		mips_filt = np.loadtxt(filters[3],dtype=[('wl',float),('transmission',float)])
 		def rebin_spec(wave, specin, wavnew):
 			""" rebin a spectrum/transmission curve onto a new wavelength array resolution (uses external packages)
 
@@ -461,9 +461,7 @@ def run_main():
 	count = 0
 	for i in range(1,33):
 		count += 1
-		sys.stdout.write('Working on SED: %s \r ' %(str(count)))
-		sys.stdout.flush() 
-		#print 'Working on SED # ', i
+		print 'Working on SED: ', count
 		main(i,3)
 
 

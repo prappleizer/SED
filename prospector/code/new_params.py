@@ -3,23 +3,24 @@ from prospect.models import priors, sedmodel
 from prospect.sources import CSPBasis
 tophat = priors.tophat
 from sedpy.observate import load_filters
-
+import os
 # --------------
 # RUN_PARAMS
 # --------------
 
 run_params = {'verbose':True,
               'debug':False,
-              'outfile':'../results/iteration10/iter_10err2',
+              'outfile':'../results/iteration10/TRY__',                    #### SET OUTPUT DIR/FILE
               # Fitter parameters
-              'nwalkers':128,
-              'nburn':[128, 128, 128], 'niter':512,
+              'nwalkers':128,                                              #### SET nwalkers
+              'nburn':[128, 128, 128], 'niter':512,                        #### SET nburn
               'do_powell': False,
               'ftol':0.5e-5, 'maxfev':5000,
               'initial_disp':0.1,
               # Obs data parameter
-      	      'phottable':'/Users/ipasha/RESEARCH/SEDs/old/prospector_packages/sed_10/fsed_10.txt',
-              'objname':'iteration10',
+      	      'phottable':'../../SEDs/v2/seds/iteration10_sed.txt',        #### SET INPUT SED (CHANGE NUM)
+              'objname':'iteration10',                                     #### SET OBJNAME
+              'filt_dir':'../../SEDs/v2/composite_filters/iteration_10/'   #### SET INPUT FILTER DIRECTORY
               'logify_spectrum':False,
               'normalize_spectrum':False,
               'wlo':3750, 'whi':7200,
@@ -31,15 +32,7 @@ run_params = {'verbose':True,
 # OBS
 # --------------
 
-#Load 104 filters ##############
-nums = range(1,106)
-filter_files = []
-for i in nums:
-	name = 'filter_' + str(i)
-	filter_files.append(name) 
-################################
-
-def load_obs(objname='objname', phottable='phottable', **kwargs):
+def load_obs(objname='objname', phottable='phottable',filt_dir='filt_dir', **kwargs):
     """Load photometry from an ascii file.  Assumes the following columns:
     `objid`, `filterset`, [`mag0`,....,`magN`] where N >= 11.  The User should
     modify this function (including adding keyword arguments) to read in their
@@ -60,7 +53,10 @@ def load_obs(objname='objname', phottable='phottable', **kwargs):
     fl_err = catalog[1] #Should Already Be in Maggies
     er_maggies = fl_err 
 
-
+    ####################################
+    # Create list of filename strings
+    filter_files = os.listdir(filt_dir) #only filter files (in increasing num) should be present in the filter directory
+    ####################################
 
 
     # Build output dictionary. 
@@ -68,14 +64,14 @@ def load_obs(objname='objname', phottable='phottable', **kwargs):
     # This is a list of sedpy filter objects.    See the
     # sedpy.observate.load_filters command for more details on its syntax.
 
-    obs['filters'] = load_filters(filter_files, directory='/Users/ipasha/RESEARCH/SEDs/filters/sed_10/')
+    obs['filters'] = load_filters(filter_files, directory=filt_dir)
 
     # This is a list of maggies, converted from mags.  It should have the same
     # order as `filters` above.
 
     obs['maggies'] = fl_maggies
     obs['maggies_unc'] = er_maggies
-    obs['maggies_unc'] = (.1*np.max(fl_maggies))*er_maggies
+    obs['maggies_unc'] = (.1*np.max(fl_maggies))*er_maggies  #### THIS THING INVOLVES A LOT OF TOYING WITH
  
     # Here we mask out any NaNs or infs
     obs['phot_mask'] = [True]*len(fl_maggies)

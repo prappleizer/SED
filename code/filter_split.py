@@ -37,12 +37,15 @@ def maker(iteration):
         better_out2.append(thing2)
     for i in range(len(better_out2)):
         num = i+1001
-        filename = '/Users/ipasha/RESEARCH/new_from_scratch_research/SEDs/composite_filters/iteration_' + str(iteration) + '/filter_' + str(num) + '.par'
+        filename = '/Users/ipasha/RESEARCH/CSED_2017/SEDs/v2/composite_filters/iteration_' + str(iteration) + '/filter_' + str(num) + '.par'
         out_arr = np.column_stack((better_out1[i],better_out2[i]))
         print out_arr
         np.savetxt(filename,out_arr)
     #return better_out1, better_out2
     
+for i in range(1,33):
+    maker(i)
+
 
 
           

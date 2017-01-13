@@ -2,13 +2,13 @@ import numpy as np
 
 ################################
 # Set the directory to send the composite filters 
-composite_filter_output_directory = '/Users/ipasha/RESEARCH/CSED_2017/SEDs/v2/composite_filters/iteration_'
+composite_filter_output_directory = '/Users/ipasha/RESEARCH/CSED_2017/SEDs/v3/composite_filters/iteration_'
 ################################
 
 def load(iteration):
     #Load filters
     str2 = str(iteration)
-    str4 = '../input_files/Optical_transmission_curves/filter_spec'
+    str4 = '../input_files/Optical_transmission_curves/filters_spec'
     str5 = str2
     str6 = '.dat'
     filter_filn = str4 + str5 + str6
@@ -44,11 +44,11 @@ def maker(iteration):
         num = i+1001
         filename = composite_filter_output_directory + str(iteration) + '/filter_' + str(num) + '.par'
         out_arr = np.column_stack((better_out1[i],better_out2[i]))
-        print out_arr
         np.savetxt(filename,out_arr)
     #return better_out1, better_out2
     
 for i in range(1,33):
+    print 'Working on SED: ', i
     maker(i)
 
 

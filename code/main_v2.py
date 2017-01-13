@@ -13,9 +13,9 @@ conversion_file = '../input_files/ID_conversion_v2.txt'
 bins_file = '../input_files/Bins_v4.7.dat'
 z_file = '../input_files/cosmos-1.bc03.v4.7.fout'
 filt_dir = '../input_files/IR_transmission_curves/'
-filters = [filt_dir+'PacsFilter_blue.txt',filt_dir+'PacsFilter_green.txt',filt_dir+'sp250.dat',filt_dir+'sp350.dat']
+filters = [filt_dir+'mips_24um.dat',filt_dir+'PacsFilter_blue.txt',filt_dir+'PacsFilter_green.txt',filt_dir+'sp250.dat',filt_dir+'sp350.dat']
 
-output_version_number = '2'
+output_version_number = '3'
 #################################################################
 ################### Auxilliary Functions ########################
 def bootstrap_resample(X, n=None):
@@ -249,7 +249,7 @@ def create_stacks(iteration_num,num_stacks):
 	# just zout 4 times in a row (since the order of the fluxes/wl is consistent filter to filter)
 	redshifts = np.concatenate((herschel_obj.zout,herschel_obj.zout,herschel_obj.zout,herschel_obj.zout))
 	# tag everything from four filters with a 1,2,3 or 4 (to create composite filters later).
-	which_filter = np.concatenate((np.ones(len(herschel_obj.fluxes['F100'])), np.ones(len(herschel_obj.fluxes['F100']))*2, np.ones(len(herschel_obj.fluxes['F100']))*3, np.ones(len(herschel_obj.fluxes['F100']))*4))
+	which_filter = np.concatenate((np.ones(len(herschel_obj.fluxes['F100'])), np.ones(len(herschel_obj.fluxes['F160']))*2, np.ones(len(herschel_obj.fluxes['F250']))*3, np.ones(len(herschel_obj.fluxes['F350']))*4))
 	
 	# Clever bit of rearranging- above we have all the ir fluxes from the different filters one after another in whatever order they were in
 	# We also have the wl, redshifts, and which filter they are in the same order. 
@@ -260,7 +260,7 @@ def create_stacks(iteration_num,num_stacks):
 	full_sed_data = np.transpose(full_sed_data)
 	full_sed_data = full_sed_data[full_sed_data[:,0].argsort()]
 	full_sed_data = np.transpose(full_sed_data)
-
+	#The above step should have ordered the arrays by lowest to highest wavelength, and then carried along all the other info.
     #Pull everything back out of full_sed_data (maybe reworks this)
 	wls = full_sed_data[0]
 	fls = full_sed_data[1]
@@ -357,13 +357,13 @@ class SED(object):
 
 		"""
 		# Load the filters 
-		pacs_blue = np.loadtxt(filters[0],skiprows=2,dtype=[('wl',float),('transmission',float)]) #load filter files from internal dir
-		pacs_blue['wl']*=1000.
-		pacs_green = np.loadtxt(filters[1],skiprows=2,dtype=[('wl',float),('transmission',float)])
-		pacs_green['wl']*=1000.
-		spire250 = np.loadtxt(filters[2],dtype=[('wl',float),('transmission',float)])
-		spire350 = np.loadtxt(filters[3],dtype=[('wl',float),('transmission',float)])
-		mips_filt = np.loadtxt(filters[3],dtype=[('wl',float),('transmission',float)])
+		mips_filt = np.loadtxt(filters[0],dtype=[('wl',float),('transmission',float)])
+		pacs_blue = np.loadtxt(filters[1],skiprows=2,dtype=[('wl',float),('transmission',float)]) #load filter files from internal dir
+		pacs_blue['wl']*=10000.
+		pacs_green = np.loadtxt(filters[2],skiprows=2,dtype=[('wl',float),('transmission',float)])
+		pacs_green['wl']*=10000.
+		spire250 = np.loadtxt(filters[3],dtype=[('wl',float),('transmission',float)])
+		spire350 = np.loadtxt(filters[4],dtype=[('wl',float),('transmission',float)])
 		def rebin_spec(wave, specin, wavnew):
 			""" rebin a spectrum/transmission curve onto a new wavelength array resolution (uses external packages)
 
@@ -380,9 +380,9 @@ class SED(object):
 			filt = spectrum.ArraySpectralElement(wave, f, waveunits='angstrom')
 			obs = observation.Observation(spec, filt, binset=wavnew, force='taper')
 			return obs.binflux
-		def calculations(z,filt):
+		def calculations(z_arr,filt):
 			common_wl=np.arange(10000,10000000,1000)
-			drs_wl = filt['wl'] / (1+z)
+			drs_wl = filt['wl'] / (1+z_arr)
 			#normalized_tr = filt['transmission'] / simps(filt['transmission'],drs_wl) #faster to run simps just once on final thing right?
 			rebinned_spec = rebin_spec(drs_wl,filt['transmission'],common_wl)
 			return rebinned_spec
@@ -393,10 +393,12 @@ class SED(object):
 		mips_comp_filt = np.zeros(len(self.common_wl_arr))
 		for z in self.herschel_obj.zout:
 			mips_comp_filt += calculations(z,mips_filt)
+		#plt.plot(self.common_wl_arr,mips_comp_filt,lw=2,color='b',label='mips')
 		mips_comp_filt /= simps(mips_comp_filt,self.common_wl_arr)
 
 		#perform calculation for herschel bins (IR stacks) - this works for any number of stacks you choose to create
 		stack_filters = [mips_comp_filt]
+		color=['r','g','k']
 		for i in range(len(self.z_bins)):
 			bin_comp_filter = np.zeros(len(self.common_wl_arr))
 			for j in range(len(self.z_bins[i])):
@@ -409,18 +411,28 @@ class SED(object):
 				elif int(self.filt_bins[i][j]) == 4:
 					rebinned_spec = calculations(self.z_bins[i][j],spire350)
 				bin_comp_filter += rebinned_spec
+				#if i==1:
+					#plt.plot(self.common_wl_arr,rebinned_spec)
+			#label='comp for filt' + str(i)
+			#plt.plot(self.common_wl_arr,bin_comp_filter,color=color[i],lw=2,label=label)
 			bin_comp_filter /= simps(bin_comp_filter,self.common_wl_arr) #normalize area to 1
+
 			#print 'composite filter area: ', simps(bin_comp_filter,self.common_wl_arr) #confirm normalization to 1
 			stack_filters.append(bin_comp_filter)
+		#for i in stack_filters:
+		#	plt.plot(self.common_wl_arr,i)
+		#plt.legend()
+		#plt.show()
 		return stack_filters
 
 	def plot_filters(self):
 		self.comp_filts = self.create_filters()
-		plt.plot(self.common_wl_arr, self.comp_filts[0])
-		plt.plot(self.common_wl_arr, self.comp_filts[1])
-		plt.plot(self.common_wl_arr, self.comp_filts[2])
-		plt.plot(self.common_wl_arr, self.comp_filts[3])	
+		plt.plot(self.common_wl_arr, self.comp_filts[0],label='Mips composite')
+		plt.plot(self.common_wl_arr, self.comp_filts[1],label='stack one composite')
+		plt.plot(self.common_wl_arr, self.comp_filts[2],label='stack two composite')
+		plt.plot(self.common_wl_arr, self.comp_filts[3],label='stack three composite')	
 		plt.xscale('log')
+		plt.legend()
 		plt.show()	
 	def file_out(self,fname):
 		self.fname=fname

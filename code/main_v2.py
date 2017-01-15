@@ -214,17 +214,27 @@ class Herschel(object):
 		elif self.err_out ==True:
 			return wl, flux_maggies, error_maggies
 
-	def plot_sed(self):
+	def plot_sed(self,incl_optical=True,nufnu=False):
 		'''
 		Plot optical SED with herschel data for same galaxies (pre stack)
 		'''
-		plt.plot(self.wavelengths['24'],self.fluxes['F24'],'.',label=r'$24\mu m$')
-		plt.plot(self.wavelengths['100'],self.fluxes['F100'],'.',label=r'$100\mu m$')
-		plt.plot(self.wavelengths['160'],self.fluxes['F160'],'.',label=r'$160\mu m$')
-		plt.plot(self.wavelengths['250'],self.fluxes['F250'],'.',label=r'$250\mu m$')
-		plt.plot(self.wavelengths['350'],self.fluxes['F350'],'.',label=r'$350\mu m$')
-		wl,fl = self.load_dyas(self.iteration_num)
-		plt.plot(wl,fl,'ks',label='Optical SED')
+		if nufnu==False:
+			plt.plot(self.wavelengths['24'],self.fluxes['F24'],'.',label=r'$24\mu m$',alpha=.2,color='k')
+			plt.plot(self.wavelengths['100'],self.fluxes['F100'],'.',label=r'$100\mu m$',alpha=.2,color='k')
+			plt.plot(self.wavelengths['160'],self.fluxes['F160'],'.',label=r'$160\mu m$',alpha=.2,color='k')
+			plt.plot(self.wavelengths['250'],self.fluxes['F250'],'.',label=r'$250\mu m$',alpha=.2,color='k')
+			plt.plot(self.wavelengths['350'],self.fluxes['F350'],'.',label=r'$350\mu m$',alpha=.2,color='k')
+		elif nufnu==True:
+			#nu = 299792458. / (self.wavelengths*1E-10)
+			#mips_nuFnu = 
+			plt.plot(self.wavelengths['24'],self.fluxes['F24']*(299792458./ (self.wavelengths['24']*1E-10)),'.',label=r'$24\mu m$',alpha=.2,color='k')
+			plt.plot(self.wavelengths['100'],self.fluxes['F100']*(299792458./ (self.wavelengths['100']*1E-10)),'.',label=r'$100\mu m$',alpha=.2,color='k')
+			plt.plot(self.wavelengths['160'],self.fluxes['F160']*(299792458./ (self.wavelengths['160']*1E-10)),'.',label=r'$160\mu m$',alpha=.2,color='k')
+			plt.plot(self.wavelengths['250'],self.fluxes['F250']*(299792458./ (self.wavelengths['250']*1E-10)),'.',label=r'$250\mu m$',alpha=.2,color='k')
+			plt.plot(self.wavelengths['350'],self.fluxes['F350']*(299792458./ (self.wavelengths['350']*1E-10)),'.',label=r'$350\mu m$',alpha=.2,color='k')
+		if incl_optical:
+			wl,fl = self.load_dyas(self.iteration_num)
+			plt.plot(wl,fl,'ks',label='Optical SED')
 		plt.xscale('log')
 		plt.yscale('log')
 		#plt.legend(loc=2)
@@ -437,18 +447,31 @@ class SED(object):
 	def file_out(self,fname):
 		self.fname=fname
 		np.savetxt(self.fname,self.out_array)
-	def plot(self,display='Fnu'):
+	def plot(self,display='Fnu',incl_raw=False):
 		self.display=display
 		if self.display=='Fnu':
-			plt.errorbar(self.wavelengths,self.fluxes,yerr=self.errors,fmt='s',ms=7)
+			#plt.errorbar(self.wavelengths,self.fluxes,yerr=self.errors,fmt='s',color='k',ms=7)
 			plt.ylabel(r'$F_{\nu}$')
+			for i in range(len(self.fluxes)):
+				if self.fluxes[i] < 0: 
+					plt.plot(self.wavelengths[i],self.errors[i],'kv',ms=10)
+				else:
+					plt.errorbar(self.wavelengths[i],self.fluxes[i],yerr=self.errors[i],fmt='s',color='k',ms=7)
+			if incl_raw:
+				self.herschel_obj.plot_sed(incl_optical=False,nufnu=False)
 		elif self.display=='nuFnu':
 			nu = 299792458. / (self.wavelengths*1E-10) 
 			nuFnu = nu*self.fluxes
 			nuFnu_err=nu*self.errors
-			plt.errorbar(self.wavelengths,nuFnu,yerr=nuFnu_err,fmt='s',ms=7)
+			#plt.errorbar(self.wavelengths,nuFnu,yerr=nuFnu_err,fmt='s',color='k',ms=7)
 			plt.ylabel(r'$\nu F_{\nu}$')
-
+			for i in range(len(self.fluxes)):
+				if nuFnu[i] < 0: 
+					plt.plot(self.wavelengths[i],nuFnu_err[i],'kv',ms=10)
+				else:
+					plt.errorbar(self.wavelengths[i],nuFnu[i],yerr=nuFnu_err[i],fmt='s',color='k',ms=7)
+			if incl_raw:
+				self.herschel_obj.plot_sed(incl_optical=False,nufnu=True)
 		plt.xscale('log')
 		plt.yscale('log')
 		plt.xlabel(r'$\lambda$ [$\AA$]')

@@ -83,7 +83,8 @@ def lnprobfn(theta, model=None, obs=None, verbose=run_params['verbose']):
             phot_noise.update(**model.params)
         vectors = {'spec': mu, 'unc': obs['unc'],
                    'sed': model._spec, 'cal': model._speccal,
-                   'phot': phot, 'maggies_unc': obs['maggies_unc']}
+                   'phot': phot, 'maggies_unc': obs['maggies_unc'],
+                   'filter_jitter':obs['filter_jitter']}
 
         # Calculate likelihoods
         t2 = time.time()

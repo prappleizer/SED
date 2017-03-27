@@ -224,14 +224,27 @@ class Herschel(object):
 			plt.plot(self.wavelengths['160'],self.fluxes['F160'],'.',label=r'$160\mu m$',alpha=.2,color='k')
 			plt.plot(self.wavelengths['250'],self.fluxes['F250'],'.',label=r'$250\mu m$',alpha=.2,color='k')
 			plt.plot(self.wavelengths['350'],self.fluxes['F350'],'.',label=r'$350\mu m$',alpha=.2,color='k')
+			fl_list = ['F24','F100','F160','F250','F350']
+			wl_list = ['24','100','160','250','350']
+			for i in range(len(fl_list)):
+				neg_vals = np.where(self.fluxes[fl_list[i]]<0)[0]
+				vals = (np.ones(len(neg_vals))*min(j for j in self.fluxes[fl_list[3]] if j>0)) / 2.
+				plt.plot(self.wavelengths[wl_list[i]][neg_vals],vals,'kv',ms=3)
 		elif nufnu==True:
 			#nu = 299792458. / (self.wavelengths*1E-10)
 			#mips_nuFnu = 
+			concat_wl = np.concatenate((self.wavelengths['24'],self.wavelengths['100'],self.wavelengths['160'],self.wavelengths['250'],self.wavelengths['350']))
+			concat_vfl = np.concatenate((self.fluxes['F24']*(299792458./ (self.wavelengths['24']*1E-10)),self.fluxes['F100']*(299792458./ (self.wavelengths['100']*1E-10)),self.fluxes['F160']*(299792458./ (self.wavelengths['160']*1E-10)),self.fluxes['F250']*(299792458./ (self.wavelengths['250']*1E-10)),self.fluxes['F350']*(299792458./ (self.wavelengths['350']*1E-10))))
 			plt.plot(self.wavelengths['24'],self.fluxes['F24']*(299792458./ (self.wavelengths['24']*1E-10)),'.',label=r'$24\mu m$',alpha=.2,color='k')
 			plt.plot(self.wavelengths['100'],self.fluxes['F100']*(299792458./ (self.wavelengths['100']*1E-10)),'.',label=r'$100\mu m$',alpha=.2,color='k')
 			plt.plot(self.wavelengths['160'],self.fluxes['F160']*(299792458./ (self.wavelengths['160']*1E-10)),'.',label=r'$160\mu m$',alpha=.2,color='k')
 			plt.plot(self.wavelengths['250'],self.fluxes['F250']*(299792458./ (self.wavelengths['250']*1E-10)),'.',label=r'$250\mu m$',alpha=.2,color='k')
 			plt.plot(self.wavelengths['350'],self.fluxes['F350']*(299792458./ (self.wavelengths['350']*1E-10)),'.',label=r'$350\mu m$',alpha=.2,color='k')
+			fl_list = ['F24','F160','F100','F160','F250','F350']
+			wl_list = ['24','160','100','160','250','350']
+			neg_vals = np.where(concat_vfl<0)[0]
+			vals = np.ones(len(neg_vals))*min(concat_vfl[np.where(concat_vfl>0)[0]]) / 2.
+			plt.plot(concat_wl[neg_vals],vals,'kv',ms=3)
 		if incl_optical:
 			wl,fl = self.load_dyas(self.iteration_num)
 			plt.plot(wl,fl,'ks',label='Optical SED')
@@ -344,6 +357,7 @@ class SED(object):
 		self.num_stacks = num_stacks
 		self.ir_wl, self.ir_fl, self.ir_err, self.z_bins, self.filt_bins, self.herschel_obj = create_stacks(self.iteration_num,self.num_stacks)
 		self.d_wl, self.d_fl, self.derr = self.herschel_obj.load_dyas(self.iteration_num,err_out=True)
+		self.d_mips_wl, self.d_mips_fl, self.d_mips_er = self.d_wl[-1], self.d_fl[-1], self.derr[-1]
 		self.d_wl = self.d_wl[:-1] # drop dyas's mips point in favor of my own (can change)
 		self.d_fl = self.d_fl[:-1] # drop dyas's mips point in favor of my own (can change)
 		self.derr = self.derr[:-1] # drop dyas's mips point in favor of my own (can change)
@@ -447,7 +461,8 @@ class SED(object):
 	def file_out(self,fname):
 		self.fname=fname
 		np.savetxt(self.fname,self.out_array)
-	def plot(self,display='Fnu',incl_raw=False):
+	def plot(self,display='Fnu',incl_raw=False,save_fig=False):
+		plt.figure()
 		self.display=display
 		if self.display=='Fnu':
 			#plt.errorbar(self.wavelengths,self.fluxes,yerr=self.errors,fmt='s',color='k',ms=7)
@@ -475,7 +490,18 @@ class SED(object):
 		plt.xscale('log')
 		plt.yscale('log')
 		plt.xlabel(r'$\lambda$ [$\AA$]')
-		plt.show()
+		plt.tight_layout()
+		tit = 'SED for iteration: ' + str(self.iteration_num)
+		plt.title(tit)
+		if save_fig:
+			title = '../plots/raw_composite_seds/iteration_' + str(self.iteration_num) + '.pdf'
+			plt.savefig(title)
+			plt.close()
+		elif save_fig==False:
+			plt.show()
+
+		
+
 
 
 
@@ -502,13 +528,86 @@ def run_main(num_stacks):
 		print 'Working on SED: ', count
 		main(i,num_stacks)
 
+def save_raw_figs():
+	for i in range(1,33):
+		sed = SED(i,3)
+		sed.plot('nuFnu',incl_raw=True,save_fig=True)
 
 
 
 
+def compare_dyas():
+	phot_fluxes = []
+	dyas_fluxes = []
+	phot_errors = []
+	dyas_errors = []
+	for i in range(1,33):
+		print 'Working on SED: ', i 
+		sed = SED(i,3)
+		phot_fluxes.append(sed.ir_fl[0])
+		phot_errors.append(sed.ir_err[0])
+		dyas_fluxes.append(sed.d_mips_fl)
+		dyas_errors.append(sed.d_mips_er)
+	out_arr = np.column_stack((phot_fluxes,phot_errors,dyas_fluxes,dyas_errors))
+	np.savetxt('mips_comparison_mean.txt',out_arr)
 
-
-
+		#plt.errorbar(phot_mips_fl,d_mips_fl,yerr=d_mips_er,xerr=phot_mips_er,fmt='o',ms=15)
+	#plt.show()
+def actually_compare():
+	a = np.loadtxt('mips_comparison_mean.txt')
+	a = np.transpose(a)
+	pf = a[0]
+	pe = a[1]
+	df = a[2]
+	de = a[3]
+	'''
+	plt.errorbar(pf,df,yerr=de,xerr=pe,fmt='o',ms=20,alpha=0.2)
+	offset = 1
+	for i in range(len(pf)):
+		plt.annotate(str(i+1),xy=(pf[i],df[i]),xytext=(-offset,-offset))
+	x = np.linspace(0,1,10000)
+	plt.plot(x,x,'k')
+	for i in range(len(pf)):
+		if pf[i] < 0:
+			plt.plot(1E-4,df[i],'<',ms=15,color='b',alpha=0.2)
+			plt.annotate(str(i+1),xy=[1.03E-4,df[i]])
+	#plt.xscale('log')
+	#plt.yscale('log')
+	plt.xlabel(r'Herschel Photometry [$F_{\nu}$]')
+	plt.ylabel(r'Image Stacking [$F_{\nu}$]')
+	plt.show()
+	'''
+	fig, ax = plt.subplots()
+	for i in range(len(pf)):
+		if pf[i] > 0:
+			ax.errorbar(pf[i],df[i],yerr=de[i],xerr=pe[i],fmt='o',ms=20,alpha=0.2,color='b')
+	offset = 1.0 
+	xx = np.linspace(0,1,10000)
+	#ax.set_xlim(min(pf)-offset, max(pf)+ offset)
+	#ax.set_ylim(min(df)-offset, max(df)+ offset)
+	count = 0
+	for x,y in zip(pf,df):
+		count += 1
+		text = str(count)
+		fontsize, aspect_ratio = (12, 0.5) # needs to be adapted to font
+		width = len(text) * aspect_ratio * fontsize 
+		height = fontsize
+		a = ax.annotate(text,  xy=(x,y), xytext=(-width/2.0,-height/2.0), textcoords='offset points')
+	for i in range(len(pf)):
+		if pf[i] < 0:
+			error = np.array([[pe[i],0]]).T
+			plt.errorbar(pe[i],df[i],yerr=de[i],xerr=error,fmt='<',ms=25,color='b',alpha=0.2)
+			ontsize, aspect_ratio = (12, 0.5) # needs to be adapted to font
+			width = len(text) * aspect_ratio * fontsize 
+			height = fontsize
+			plt.annotate(str(i+1),xy=[pe[i],df[i]],xytext=(width/2.9,-height/2.3), textcoords='offset points')
+	ax.plot(xx,xx,'k')
+	ax.set_yscale('log')
+	ax.set_xscale('log')
+	ax.set_xlabel(r'Herschel Photometry [maggies]')
+	ax.set_ylabel(r'Image Stacking [maggies]')
+	plt.tight_layout()
+	plt.show()
 
 
 
